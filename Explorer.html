@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compound Interest Explorer</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:#ffffff;
+    padding:40px;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+}
+
+h1{
+    margin-bottom:30px;
+}
+
+.control{
+    display:flex;
+    align-items:center;
+    gap:20px;
+    margin-bottom:20px;
+}
+
+.control label{
+    width:140px;
+}
+
+.control input[type="range"]{
+    flex:1;
+}
+
+.value{
+    width:100px;
+    text-align:right;
+    font-weight:bold;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+    margin:25px 0;
+}
+
+.card{
+    background:#f7f7f7;
+    padding:18px;
+    border-radius:10px;
+}
+
+.card p{
+    color:#666;
+    margin-bottom:10px;
+}
+
+.card h2{
+    font-size:22px;
+}
+
+.card small{
+    color:#777;
+}
+
+.chart-container{
+    margin-top:20px;
+}
+
+canvas{
+    width:100%;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Compound Interest Explorer</h1>
+
+<div class="control">
+<label>Starting amount</label>
+<input type="range" id="principal" min="1000" max="100000" step="1000" value="3000">
+<div class="value" id="principalValue">₹3,000</div>
+</div>
+
+<div class="control">
+<label>Annual rate</label>
+<input type="range" id="rate" min="1" max="20" value="8">
+<div class="value" id="rateValue">8%</div>
+</div>
+
+<div class="control">
+<label>Years</label>
+<input type="range" id="years" min="1" max="30" value="20">
+<div class="value" id="yearsValue">20 yrs</div>
+</div>
+
+<div class="cards">
+
+<div class="card">
+<p>Final amount</p>
+<h2 id="finalAmount">₹0</h2>
+</div>
+
+<div class="card">
+<p>Total interest earned</p>
+<h2 id="interestEarned">₹0</h2>
+<small id="growthMultiple"></small>
+</div>
+
+<div class="card">
+<p>You put in</p>
+<h2 id="invested">₹0</h2>
+</div>
+
+<div class="card">
+<p>Interest on interest</p>
+<h2 id="compoundBonus">₹0</h2>
+<small>the snowball effect</small>
+</div>
+
+</div>
+
+<div class="chart-container">
+<canvas id="chart"></canvas>
+</div>
+
+</div>
+
+<script>
+
+const principalSlider = document.getElementById("principal");
+const rateSlider = document.getElementById("rate");
+const yearsSlider = document.getElementById("years");
+
+let chart;
+
+function formatCurrency(value){
+    return "₹" + Math.round(value).toLocaleString();
+}
+
+function updateCalculator(){
+
+    let P = Number(principalSlider.value);
+    let R = Number(rateSlider.value)/100;
+    let T = Number(yearsSlider.value);
+
+    document.getElementById("principalValue").innerText =
+        formatCurrency(P);
+
+    document.getElementById("rateValue").innerText =
+        (R*100)+"%";
+
+    document.getElementById("yearsValue").innerText =
+        T+" yrs";
+
+    let finalAmount = P * Math.pow((1+R),T);
+
+    let totalInterest = finalAmount - P;
+
+    let simpleInterest = P * R * T;
+
+    let compoundBonus = totalInterest - simpleInterest;
+
+    document.getElementById("finalAmount").innerText =
+        formatCurrency(finalAmount);
+
+    document.getElementById("interestEarned").innerText =
+        formatCurrency(totalInterest);
+
+    document.getElementById("invested").innerText =
+        formatCurrency(P);
+
+    document.getElementById("compoundBonus").innerText =
+        formatCurrency(compoundBonus);
+
+    document.getElementById("growthMultiple").innerText =
+        (finalAmount/P).toFixed(1) + "x your money";
+
+    const labels = ["Now"];
+    const principalData = [];
+    const simpleData = [];
+    const bonusData = [];
+
+    for(let year=0; year<=T; year++){
+
+        labels.push("Yr "+year);
+
+        let compoundValue = P*Math.pow((1+R),year);
+        let simpleValue = P + (P*R*year);
+
+        principalData.push(P);
+        simpleData.push(simpleValue-P);
+        bonusData.push(compoundValue-simpleValue);
+    }
+
+    if(chart){
+        chart.destroy();
+    }
+
+    chart = new Chart(
+        document.getElementById("chart"),
+        {
+            type:"bar",
+            data:{
+                labels:labels.slice(1),
+                datasets:[
+                    {
+                        label:"Principal",
+                        data:principalData,
+                        backgroundColor:"#3b82f6"
+                    },
+                    {
+                        label:"Simple interest",
+                        data:simpleData,
+                        backgroundColor:"#10b981"
+                    },
+                    {
+                        label:"Compound bonus",
+                        data:bonusData,
+                        backgroundColor:"#bfdbfe"
+                    }
+                ]
+            },
+            options:{
+                responsive:true,
+                plugins:{
+                    legend:{
+                        position:"top"
+                    }
+                },
+                scales:{
+                    x:{
+                        stacked:true
+                    },
+                    y:{
+                        stacked:true
+                    }
+                }
+            }
+        }
+    );
+}
+
+principalSlider.addEventListener("input",updateCalculator);
+rateSlider.addEventListener("input",updateCalculator);
+yearsSlider.addEventListener("input",updateCalculator);
+
+updateCalculator();
+
+</script>
+
+</body>
+</html>
